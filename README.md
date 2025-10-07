@@ -13,7 +13,14 @@ clone the repo recursively inorder to access the [Stockfish](https://github.com/
 
 ## Quick Start (Linux/Windows)
 
-I prefer using a virtual environment, adjust to your prefrences
+I prefer using a virtual environment, adjust to your preferences
+
+### Clone the repo recursively
+```bash
+git clone --recurse-submodules https://github.com/OneNonly-God/ChessEngine.git
+```
+
+* Go inside the repo and continue.
 
 ### Installing python modules and configuration
 
