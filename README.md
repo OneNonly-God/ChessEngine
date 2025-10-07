@@ -6,6 +6,11 @@ This is a chess engine built using python and c++.
 
 ---
 
+## Images
+
+### Chess Engine
+![Screenshot](images/app.jpeg)
+
 ## Quick Start (Linux/Windows)
 
 * I prefer using a virtual environment, adjust to your preferences.
