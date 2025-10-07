@@ -6,14 +6,9 @@ This is a chess engine built using python and c++.
 
 ---
 
-## Building the binary executable
-
-clone the repo recursively inorder to access the [Stockfish](https://github.com/official-stockfish/Stockfish) repo and build the executable. Follow the instructions from there and continue onwards. I have pre-included an executable inside bin.
-
-
 ## Quick Start (Linux/Windows)
 
-I prefer using a virtual environment, adjust to your preferences
+* I prefer using a virtual environment, adjust to your preferences.
 
 ### Clone the repo recursively
 ```bash
@@ -31,9 +26,15 @@ python -m pip install --upgrade pip setuptools wheel
 python -m pip install python-chess
 ```
 
+## Building the binary executable
+
+The [Stockfish](https://github.com/official-stockfish/Stockfish) should be installed. Build the executeable according to your platform and replace the pre-existing stockfish binary inisde bin if required.
+(**The executeable only works for linux thats why you must build it yourself**)
+
+
 ### Run the app
 ```bash
-python sf_test.py
+python sf.py
 ```
 
 ---
@@ -42,6 +43,7 @@ python sf_test.py
 
 * **disabling controls while the engine is busy**
 * **Hotkeys and shortcuts for certain actions**
+* **Implement and fix resizeabiltiy**
 ---
 
 ## Troubleshooting
