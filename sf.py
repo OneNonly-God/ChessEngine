@@ -2,12 +2,11 @@
 """
 Features:
 - Click source then destination to make a move
-- Visual feedback for legal moves (including en passant)
+- Visual feedback for legal moves
 - "Engine Move" asks Stockfish for a best move
 - "Analyze" runs analysis with evaluation
 - New Game, Undo, Flip Board
 - Load/Save FEN and PGN support
-- Proper promotion handling with all pieces
 """
 import os
 import threading
