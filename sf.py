@@ -2,11 +2,12 @@
 """
 Features:
 - Click source then destination to make a move
-- Visual feedback for legal moves
+- Visual feedback for legal moves (including en passant)
 - "Engine Move" asks Stockfish for a best move
 - "Analyze" runs analysis with evaluation
 - New Game, Undo, Flip Board
 - Load/Save FEN and PGN support
+- Proper promotion handling with all pieces
 """
 import os
 import threading
@@ -471,71 +472,72 @@ class StockfishGUI(tk.Tk):
 
     def _try_move(self, src, dest):
         """Try to make a move, handling promotions"""
-        # Try normal move (includes en passant)
-        move = chess.Move(src, dest)
-        if move in self.board.legal_moves:
-            self.board.push(move)
-            self.last_move = move
-            self.current_eval = None  # Clear eval after player move
-            
-            # Auto-analyze if enabled
-            if self.auto_analyze.get():
-                self.after(100, self._quick_analyze)
-            
-            return True
-        
-        # Check if this is a promotion move
+        # Check if this is a promotion move first
         piece = self.board.piece_at(src)
+        needs_promotion = False
+        
         if piece and piece.piece_type == chess.PAWN:
             # Check if pawn is moving to last rank
             dest_rank = chess.square_rank(dest)
             if (piece.color == chess.WHITE and dest_rank == 7) or \
                (piece.color == chess.BLACK and dest_rank == 0):
-                # This is a promotion - ask user which piece
-                promotion_piece = self._ask_promotion()
-                if promotion_piece:
-                    move = chess.Move(src, dest, promotion=promotion_piece)
-                    if move in self.board.legal_moves:
-                        self.board.push(move)
-                        self.last_move = move
-                        self.current_eval = None
-                        
-                        # Auto-analyze if enabled
-                        if self.auto_analyze.get():
-                            self.after(100, self._quick_analyze)
-                        
-                        return True
+                needs_promotion = True
+        
+        if needs_promotion:
+            # Ask for promotion piece
+            promotion_piece = self._ask_promotion()
+            if promotion_piece is None:
+                return False  # User cancelled
+            
+            move = chess.Move(src, dest, promotion=promotion_piece)
+            if move in self.board.legal_moves:
+                self.board.push(move)
+                self.last_move = move
+                self.current_eval = None
+                
+                # Auto-analyze if enabled
+                if self.auto_analyze.get():
+                    self.after(100, self._quick_analyze)
+                
+                return True
+            return False
+        else:
+            # Try normal move (includes castling and en passant)
+            move = chess.Move(src, dest)
+            if move in self.board.legal_moves:
+                self.board.push(move)
+                self.last_move = move
+                self.current_eval = None
+                
+                # Auto-analyze if enabled
+                if self.auto_analyze.get():
+                    self.after(100, self._quick_analyze)
+                
+                return True
         
         return False
     
     def _ask_promotion(self):
-        """Show dialog to select promotion piece"""
+        """Show dialog to select promotion piece - FIXED VERSION"""
         dialog = tk.Toplevel(self)
         dialog.title("Promote Pawn")
-        dialog.geometry("300x150")
         dialog.configure(bg="#E0E0E0")
         dialog.transient(self)
-        dialog.grab_set()
-        
-        # Center the dialog
-        dialog.update_idletasks()
-        x = self.winfo_x() + (self.winfo_width() // 2) - (dialog.winfo_width() // 2)
-        y = self.winfo_y() + (self.winfo_height() // 2) - (dialog.winfo_height() // 2)
-        dialog.geometry(f"+{x}+{y}")
+        dialog.resizable(False, False)
         
         selected_piece = [None]  # Use list to store result
         
         tk.Label(dialog, text="Select promotion piece:", 
-                font=("Arial", 12), bg="#E0E0E0").pack(pady=10)
+                font=("Arial", 12), bg="#E0E0E0").pack(pady=15, padx=20)
         
         button_frame = tk.Frame(dialog, bg="#E0E0E0")
-        button_frame.pack(pady=10)
+        button_frame.pack(pady=10, padx=20)
         
         def select_piece(piece):
             selected_piece[0] = piece
             dialog.destroy()
         
-        # Create buttons with unicode pieces
+        # Create buttons with unicode pieces - all four promotion options
         pieces = [
             (chess.QUEEN, "♕ Queen", "Q"),
             (chess.ROOK, "♖ Rook", "R"),
@@ -553,14 +555,41 @@ class StockfishGUI(tk.Tk):
             )
             btn.pack(side=tk.LEFT, padx=5)
         
-        # Handle window close
+        # Handle window close - default to Queen
         dialog.protocol("WM_DELETE_WINDOW", lambda: select_piece(chess.QUEEN))
+        
+        # Center the dialog - do this AFTER creating all widgets
+        dialog.update_idletasks()
+        
+        # Calculate position to center on parent
+        parent_x = self.winfo_x()
+        parent_y = self.winfo_y()
+        parent_width = self.winfo_width()
+        parent_height = self.winfo_height()
+        
+        dialog_width = dialog.winfo_reqwidth()
+        dialog_height = dialog.winfo_reqheight()
+        
+        x = parent_x + (parent_width - dialog_width) // 2
+        y = parent_y + (parent_height - dialog_height) // 2
+        
+        dialog.geometry(f"+{x}+{y}")
+        
+        # IMPORTANT: Set grab AFTER window is positioned and visible
+        dialog.deiconify()  # Ensure window is visible
+        dialog.update()  # Process all pending events
+        
+        try:
+            dialog.grab_set()  # Now grab should work
+        except tk.TclError:
+            pass  # If grab fails, continue anyway
+        
+        dialog.focus_set()
         
         # Wait for dialog to close
         self.wait_window(dialog)
         
-        # Default to queen if no selection made
-        return selected_piece[0] or chess.QUEEN
+        return selected_piece[0]
 
     def flip_board(self):
         """Flip the board orientation"""
